@@ -5,7 +5,7 @@ export async function loadAssets(stage) {
   const onError = (err, asset) => console.debug("Retrying:", asset.src);
 
   await Assets.init({
-    manifest: "/manifest.json",
+    manifest: "manifest.json",
     loadOptions: {
       strategy: "retry",
       retryCount: 4,
