@@ -1,7 +1,7 @@
 import * as PIXI from "pixi.js";
 import { createWinningsTextBox } from "./ui/textBox.js";
 import { bgRectangle } from "./ui/bgRectangle.js";
-import { createColorFilter } from "./ui/colorFilter.js";
+import { createColorFilter, createWhiteFilter } from "./ui/colorFilter.js";
 import { createSpinButton } from "./ui/spinButton.js";
 
 const reelBands = [
@@ -153,6 +153,8 @@ function calculateWinnings(symbol, streak) {
 let reelContainer;
 let position = [0, 0, 0, 0, 0];
 let winningsTextBox;
+let spriteGrid = []; // Store references to all sprites: spriteGrid[reelIndex][row] = sprite
+let borderGrid = []; // Store references to all borders: borderGrid[reelIndex][row] = border
 
 export function gameResize(app) {
   gameContainer.width = app.screen.width / 2;
@@ -183,6 +185,7 @@ export function startGame(app) {
 
       const wins = checkWinningLines(position);
       updateWinningsText(wins);
+      highlightWinningIcons(wins, position);
     }
   );
 
@@ -193,10 +196,14 @@ export function startGame(app) {
 
 function renderReels(positions) {
   reelContainer.removeChildren();
+  spriteGrid = []; // Reset sprite grid
+  borderGrid = []; // Reset border grid
 
   positions.forEach((startIndex, reelIndex) => {
     const singleReelContainer = new PIXI.Container();
     reelContainer.addChild(singleReelContainer);
+    spriteGrid[reelIndex] = []; // Initialize row array for this reel
+    borderGrid[reelIndex] = []; // Initialize row array for borders
 
     for (let row = 0; row < 3; row++) {
       const symbolIndex = (startIndex + row) % reelBands[reelIndex].length;
@@ -209,6 +216,26 @@ function renderReels(positions) {
       cellSprite.scale.set(0.9);
       cellSprite.filters = [createColorFilter()];
 
+      // Store sprite reference for later updates
+      spriteGrid[reelIndex][row] = cellSprite;
+
+      // Add thick black border around the icon
+      const borderThickness = 4;
+      const scaledWidth = texture.width * 0.9;
+      const scaledHeight = texture.height * 0.9;
+      const border = new PIXI.Graphics();
+      border.rect(
+        cellSprite.x - borderThickness / 2,
+        cellSprite.y - borderThickness / 2,
+        scaledWidth + borderThickness,
+        scaledHeight + borderThickness
+      );
+      border.stroke({ width: borderThickness, color: 0x000000 });
+
+      // Store border reference for later updates
+      borderGrid[reelIndex][row] = border;
+
+      singleReelContainer.addChild(border);
       singleReelContainer.addChild(cellSprite);
     }
   });
@@ -236,31 +263,107 @@ function checkWinningLines(positions) {
 
     let maxStreak = 1;
     let streak = 1;
-    let bestSymbol;
+    let bestSymbol = symbols[0];
+    let streakStartIndex = 0;
+    let bestStreakStartIndex = 0;
+
     for (let i = 1; i < symbols.length; i++) {
       if (symbols[i] === symbols[i - 1]) {
         streak++;
       } else {
+        // Streak broke, start a new one
         streak = 1;
+        streakStartIndex = i;
       }
 
       if (streak > maxStreak) {
         maxStreak = streak;
         bestSymbol = symbols[i];
+        // Calculate the start of the current streak
+        bestStreakStartIndex = i - streak + 1;
       }
     }
 
     if (maxStreak >= 3) {
+      // Calculate which reel indices are part of the winning streak
+      const winningReelIndices = [];
+      for (let i = 0; i < maxStreak; i++) {
+        winningReelIndices.push(bestStreakStartIndex + i);
+      }
+
       wins.push({
         line,
         symbols,
         maxStreak,
         bestSymbol,
+        winningReelIndices, // Indices of reels that are part of the winning streak
       });
     }
   });
 
   return wins;
+}
+
+function highlightWinningIcons(wins, positions) {
+  // First, reset all icons to grayscale and borders to black
+  for (let reelIndex = 0; reelIndex < spriteGrid.length; reelIndex++) {
+    if (spriteGrid[reelIndex]) {
+      for (let row = 0; row < 3; row++) {
+        if (spriteGrid[reelIndex][row]) {
+          spriteGrid[reelIndex][row].filters = [createColorFilter()];
+        }
+        // Reset border to black
+        if (borderGrid[reelIndex] && borderGrid[reelIndex][row]) {
+          const border = borderGrid[reelIndex][row];
+          border.clear();
+          const borderThickness = 4;
+          const sprite = spriteGrid[reelIndex][row];
+          // Use texture dimensions with scale (0.9) to match original border
+          const texture = sprite.texture;
+          const scaledWidth = texture.width * 0.9;
+          const scaledHeight = texture.height * 0.9;
+          border.rect(
+            sprite.x - borderThickness / 2,
+            sprite.y - borderThickness / 2,
+            scaledWidth + borderThickness,
+            scaledHeight + borderThickness
+          );
+          border.stroke({ width: borderThickness, color: 0x000000 });
+        }
+      }
+    }
+  }
+
+  // Then highlight only the icons that are part of the winning streak
+  if (wins.length > 0) {
+    wins.forEach((win) => {
+      // Only highlight icons in the winning streak (not the entire line)
+      win.winningReelIndices.forEach((reelIndex) => {
+        const row = win.line[reelIndex];
+        if (spriteGrid[reelIndex] && spriteGrid[reelIndex][row]) {
+          spriteGrid[reelIndex][row].filters = [createWhiteFilter()];
+        }
+        // Change border to white
+        if (borderGrid[reelIndex] && borderGrid[reelIndex][row]) {
+          const border = borderGrid[reelIndex][row];
+          border.clear();
+          const borderThickness = 4;
+          const sprite = spriteGrid[reelIndex][row];
+          // Use texture dimensions with scale (0.9) to match original border
+          const texture = sprite.texture;
+          const scaledWidth = texture.width * 0.9;
+          const scaledHeight = texture.height * 0.9;
+          border.rect(
+            sprite.x - borderThickness / 2,
+            sprite.y - borderThickness / 2,
+            scaledWidth + borderThickness,
+            scaledHeight + borderThickness
+          );
+          border.stroke({ width: borderThickness, color: 0xffffff });
+        }
+      });
+    });
+  }
 }
 
 function updateWinningsText(wins) {
