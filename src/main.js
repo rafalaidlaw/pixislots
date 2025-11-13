@@ -11,7 +11,7 @@ function resize() {
 
 (async () => {
   await app.init({
-    backgroundColor: 0xaa3939,
+    backgroundColor: 0x666666,
   });
 
   app.canvas.style.position = "absolute";

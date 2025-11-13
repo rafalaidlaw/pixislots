@@ -6,7 +6,7 @@ export function genericText(value) {
     style: {
       fontFamily: "Arial",
       fontSize: 36,
-      fill: "#d46a6a",
+      fill: "#888888",
       align: "center",
     },
     anchor: 0.5,

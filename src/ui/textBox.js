@@ -15,13 +15,14 @@ export function createWinningsTextBox(container) {
 
   const textBoxBackground = new Graphics();
   textBoxBackground.roundRect(0, 0, textBoxWidth, textBoxHeight, 10);
-  textBoxBackground.fill({ color: 0x550000, alpha: 0.8 });
+  textBoxBackground.fill({ color: 0x2a2a2a, alpha: 0.8 });
   winningsTextBox.addChild(textBoxBackground);
 
   const textBoxText = genericText("");
   textBoxText.x = textBoxWidth / 2;
   textBoxText.y = textBoxHeight / 2;
   textBoxText.anchor.set(0.5, 0.5);
+  textBoxText.style.fontWeight = "bold";
   winningsTextBox.addChild(textBoxText);
 
   winningsTextBox.updateText = (text) => {

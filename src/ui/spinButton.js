@@ -21,20 +21,20 @@ export function createSpinButton(
   const spinButtonBackground = new PIXI.Graphics();
   const radius = spinButton.width / 2;
   spinButtonBackground.circle(0, 0, radius);
-  spinButtonBackground.fill({ color: 0xbd5857 });
+  spinButtonBackground.fill({ color: 0x707070 });
   spinButtonBackground.position.set(spinButton.x + 1, spinButton.y + 1);
   gameContainer.addChild(spinButtonBackground);
 
   spinButton.on("pointerover", () => {
     spinButtonBackground.clear();
     spinButtonBackground.circle(0, 0, radius);
-    spinButtonBackground.fill({ color: 0xd46a6a });
+    spinButtonBackground.fill({ color: 0x888888 });
   });
 
   spinButton.on("pointerout", () => {
     spinButtonBackground.clear();
     spinButtonBackground.circle(0, 0, radius);
-    spinButtonBackground.fill({ color: 0xbd5857 });
+    spinButtonBackground.fill({ color: 0x707070 });
   });
 
   let isSpinning = false;
